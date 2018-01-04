@@ -1,8 +1,4 @@
 const yargs = require('yargs');
-const fs = require('fs');
-
-const geocode = require('./geocode');
-const weather = require('./weather');
 
 const argv = yargs
   .options({
@@ -24,42 +20,9 @@ const argv = yargs
   .argv;
 
 if (argv.callbacks) {
-  console.log('Using callbacks\n');
-  geocode.callbacks(argv.address, (error, result) => {
-    if (error) {
-      console.log(error);
-    } else {
-      const apiKeyFile = JSON.parse(fs.readFileSync('api_key.json', { encoding: 'utf8', flag: 'a+' }));
-      weather.callbacks(apiKeyFile.weather_api_key, result, (error, result) => {
-        if (error) {
-          console.log(error);
-        } else {
-          print(result);
-        }
-      });
-    }
-  });
+  console.log('Using callbacks and request library\n');
+  require('./callbacks/index')(argv.address);
 } else {
-  console.log('Using promises\n');
-  geocode.promises(argv.address)
-    .then(result => {
-      const apiKeyFile = JSON.parse(fs.readFileSync('api_key.json', { encoding: 'utf8', flag: 'a+' }));
-      return weather.promises(apiKeyFile.weather_api_key, result);
-    })
-    .then(result => {
-      print(result);
-    })
-    .catch((error) => {
-      console.log(error);
-    })
+  console.log('Using promises and axios library\n');
+  require('./promises/index')(argv.address);
 }
-
-const print = ({ address, summary, temperature }) => {
-  console.log(
-    `\n----------------`,
-    `\nAddress:\t${address}`,
-    `\nSummary:\t${summary}`,
-    `\nTemperature:\t${temperature}`,
-    `\n----------------\n`
-  );
-};
